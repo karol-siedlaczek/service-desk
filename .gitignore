@@ -1,0 +1,6 @@
+app/__pycache__/
+app/conf/__pycache__/
+**/__pycache__*
+app/media**
+app/logs**
+*env.*

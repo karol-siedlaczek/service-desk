@@ -1,4 +1,5 @@
 from pathlib import Path
+from . import configuration as conf
 
 CUST_TYPE = 'customer'
 OPER_TYPE = 'operator'
@@ -40,32 +41,49 @@ FILE_EXTENSIONS = {
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # Build paths inside the project like this: BASE_DIR / 'subdir'.
 LOG_DIR = BASE_DIR / 'logs'
-SECRET_KEY = 'django-insecure-z(g7^uxx3*)@ctru=wvchu5tezwzd3s@0m01rozf=-szc8%_!@'
-ALLOWED_HOSTS = ['192.168.0.100', '192.168.0.101', '127.0.0.1', '*']
+SECRET_KEY = conf.SECRET_KEY
+ALLOWED_HOSTS = conf.ALLOWED_HOSTS
 ROOT_URLCONF = 'conf.urls'
 WSGI_APPLICATION = 'conf.wsgi.application'
 # STATIC_URL = '/static/'  # Static files (CSS, JavaScript, Images) https://docs.djangoproject.com/en/3.2/howto/static-files/
 # STATIC_ROOT = f'{BASE_DIR}'
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = conf.STATIC_ROOT
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = conf.MEDIA_ROOT
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'logged_out'
-LANGUAGE_CODE = 'en-us'  # Internationalization https://docs.djangoproject.com/en/3.2/topics/i18n/
-SITE_NAME = 'ServiceDeskApp'
+LANGUAGE_CODE = conf.LANGUAGE_CODE  # Internationalization https://docs.djangoproject.com/en/3.2/topics/i18n/
+SITE_NAME = conf.SITE_NAME
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
-DEBUG = False
-TIME_ZONE = 'Europe/Zagreb'
+DEBUG = conf.DEBUG
+TIME_ZONE = conf.TIME_ZONE
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'  # Default primary key field type https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 AUTH_USER_MODEL = 'core.User'
-USE_X_FORWARED_HOST = True
+CACHE_ENABLED = conf.CACHE['ENABLED']
+USE_X_FORWARDED_HOST = conf.USE_X_FORWARDED_HOST
+SECURE_SSL_REDIRECT = conf.SECURE_SSL_REDIRECT
+SESSION_COOKIE_SECURE = conf.SESSION_COOKIE_SECURE
+CSRF_COOKIE_SECURE = conf.CSRF_COOKIE_SECURE
+CSRF_TRUSTED_ORIGINS = conf.CSRF_TRUSTED_ORIGINS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Email: use SMTP when a host is configured, otherwise fall back to console
+if conf.SMTP_SERVER['HOST']:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = conf.SMTP_SERVER['HOST']
+    EMAIL_PORT = conf.SMTP_SERVER['PORT']
+    EMAIL_HOST_USER = conf.SMTP_SERVER['USER']
+    EMAIL_HOST_PASSWORD = conf.SMTP_SERVER['PASSWORD']
+    EMAIL_USE_SSL = conf.SMTP_SERVER['USE_SSL']
+    EMAIL_USE_TLS = not conf.SMTP_SERVER['USE_SSL']
+    DEFAULT_FROM_EMAIL = conf.SMTP_SERVER['FROM']
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 INSTALLED_APPS = [
     'core',
     'django.contrib.admin',
@@ -127,24 +145,38 @@ TEMPLATES = [
 DATABASES = {  # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': '<DB_NAME>',
-        'USER': '<DB_USER>',
-        'PASSWORD': '<DB_PASS>',
-        'HOST': '<DB_HOST>',
-        'PORT': '<DB_PORT>',
+        'NAME': conf.DATABASE['NAME'],
+        'USER': conf.DATABASE['USER'],
+        'PASSWORD': conf.DATABASE['PASSWORD'],
+        'HOST': conf.DATABASE['HOST'],
+        'PORT': conf.DATABASE['PORT'],
+        'CONN_MAX_AGE': conf.DATABASE['CONN_MAX_AGE'],
+        'CONN_HEALTH_CHECKS': True
     }
 }
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.11211'
-    }
-}
+REDIS_PROTOCOL = 'rediss' if bool(conf.REDIS['SSL']) else 'redis'
 
-CACHE_MIDDLEWARE_ALIAS = 'default'  # which cache alias to use
-CACHE_MIDDLEWARE_SECONDS = 600    # number of seconds to cache a page for (TTL)
-CACHE_MIDDLEWARE_KEY_PREFIX = ''    # should be used if the cache is shared across multiple sites that use the same Django instance
+if CACHE_ENABLED:  # Falls back to the in-memory LocMemCache when disabled
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': f"{REDIS_PROTOCOL}://{conf.REDIS['HOST']}:{conf.REDIS['PORT']}",
+            'KEY_PREFIX': 'service-desk',
+            'OPTIONS': {
+                'DB': conf.REDIS['DB'],
+                'USERNAME': conf.REDIS['USER'],
+                'PASSWORD': conf.REDIS['PASSWORD'],
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5
+            }
+        }
+    }
+
+    CACHE_MIDDLEWARE_ALIAS = 'default'  # which cache alias to use
+    CACHE_MIDDLEWARE_SECONDS = conf.CACHE['TTL']  # number of seconds to cache a page for (TTL)
+    CACHE_MIDDLEWARE_KEY_PREFIX = ''  # should be used if the cache is shared across multiple sites that use the same Django instance
 
 
 AUTH_PASSWORD_VALIDATORS = [  # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -205,160 +237,160 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'app.log',
-            'maxBytes': 1024*1024*15,  # 15MB
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'request': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'request',
             'filename': LOG_DIR / 'request.log',
-            'maxBytes': 1024*1024*15,  # 15MB
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'request.server': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'request.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'security': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'security.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'server': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'server.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'template': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'template.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
         },
         'sql': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'sql',
             'filename': LOG_DIR / 'sql.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
             'filters': ['debug_mode']
         },
         'prometheus': {
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'default',
             'filename': LOG_DIR / 'prometheus.log',
-            'maxBytes': 1024 * 1024 * 15,
-            'backupCount': 5,
+            'maxBytes': conf.LOG['MAX_SIZE'],
+            'backupCount': conf.LOG['MAX_COUNT'],
             'filters': ['debug_mode']
         }
     },
     'loggers': {
         'core': {
             'handlers': ['app'],  # custom
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'core.utils.util_manager': {
             'handlers': ['app'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'core.models': {
             'handlers': ['app'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.security': {  # security
             'handlers': ['security'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.security.csrf': {
             'handlers': ['security'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'core.receivers': {
             'handlers': ['security'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.db': {  # database
             'handlers': ['sql'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.db.backends': {
             'handlers': ['sql'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.db.backends.schema': {
             'handlers': ['sql'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.db.models': {
             'handlers': ['sql'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.request': {  # request
             'handlers': ['request'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.server': {  # basically this is get/post requests
             'handlers': ['request.server'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.template': {  # template
             'handlers': ['template'],
-            'level': 'INFO',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django_prometheus': {   # prometheus
             'handlers': ['prometheus'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django_prometheus.exports': {
             'handlers': ['prometheus'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.utils.autoreload': {  # server
             'handlers': ['server'],
-            'level': 'INFO',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.utils': {
             'handlers': ['server'],
-            'level': 'DEBUG',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'django.dispatch': {
             'handlers': ['server'],
-            'level': 'INFO',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'asyncio': {
             'handlers': ['server'],
-            'level': 'INFO',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         },
         'concurrent.futures': {
             'handlers': ['server'],
-            'level': 'INFO',
+            'level': conf.LOG['LEVEL'],
             'propagate': True,
         }
     }
