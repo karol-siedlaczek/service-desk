@@ -166,7 +166,9 @@ if CACHE_ENABLED:  # Falls back to the in-memory LocMemCache when disabled
             'OPTIONS': {
                 'DB': conf.REDIS['DB'],
                 'USERNAME': conf.REDIS['USER'],
-                'PASSWORD': conf.REDIS['PASSWORD'],
+                'CONNECTION_POOL_KWARGS': {
+                    'username': conf.REDIS['USER'],
+                },
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
                 'SOCKET_CONNECT_TIMEOUT': 5,
                 'SOCKET_TIMEOUT': 5
