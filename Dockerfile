@@ -17,4 +17,4 @@ RUN mkdir -p logs media
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
-CMD ["gunicorn", "conf.wsgi:application", "-b", "0.0.0.0:8000"]
+CMD ["gunicorn", "conf.wsgi:application", "-c", "conf/gunicorn_configuration.py"]

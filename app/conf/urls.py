@@ -7,6 +7,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
 from django.views.decorators.cache import cache_page
 from core import views
+from .metrics import metrics_view
 from .sitemaps import StaticViewSitemap
 
 handler400 = 'core.views.error_400'
@@ -51,6 +52,6 @@ urlpatterns = [
     path('password-reset/sent', views.PasswordResetSentView.as_view(), name='password_reset_sent'),
     path('password-reset/confirm/<uidb64>/<token>/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password-reset/success', views.PasswordResetSuccessView.as_view(), name='password_reset_success'),
-    path('', include('django_prometheus.urls')),
+    path('metrics', metrics_view, name='prometheus-django-metrics'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', views.RobotsView.as_view(), name='robots.txt')]

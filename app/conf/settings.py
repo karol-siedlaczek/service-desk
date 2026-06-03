@@ -71,6 +71,7 @@ SESSION_COOKIE_SECURE = conf.SESSION_COOKIE_SECURE
 CSRF_COOKIE_SECURE = conf.CSRF_COOKIE_SECURE
 CSRF_TRUSTED_ORIGINS = conf.CSRF_TRUSTED_ORIGINS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+PROMETHEUS_METRICS_TOKEN = conf.METRICS_TOKEN
 
 # Email: use SMTP when a host is configured, otherwise fall back to console
 if conf.SMTP_SERVER['HOST']:
@@ -99,6 +100,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',  # must stay first to time the whole request
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -107,11 +109,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'crum.CurrentRequestUserMiddleware',
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
     'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
-    'django.middleware.locale.LocaleMiddleware'
+    'django.middleware.locale.LocaleMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware'  # must stay last to time the whole request
 ]
 
 STATICFILES_DIRS = [
@@ -144,7 +145,7 @@ TEMPLATES = [
 
 DATABASES = {  # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
         'NAME': conf.DATABASE['NAME'],
         'USER': conf.DATABASE['USER'],
         'PASSWORD': conf.DATABASE['PASSWORD'],
@@ -160,7 +161,7 @@ REDIS_PROTOCOL = 'rediss' if bool(conf.REDIS['SSL']) else 'redis'
 if CACHE_ENABLED:  # Falls back to the in-memory LocMemCache when disabled
     CACHES = {
         'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
+            'BACKEND': 'django_prometheus.cache.backends.redis.RedisCache',  # django-redis subclass + Prometheus cache metrics
             'LOCATION': f"{REDIS_PROTOCOL}://{conf.REDIS['HOST']}:{conf.REDIS['PORT']}/{conf.REDIS['DB']}",
             'KEY_PREFIX': 'service-desk',
             'OPTIONS': {

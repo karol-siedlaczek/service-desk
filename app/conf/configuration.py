@@ -30,6 +30,8 @@ DEBUG = env_bool('DJANGO_DEBUG', default=False)
 TIME_ZONE = env_str('TIME_ZONE', default='Europe/Zagreb')
 LANGUAGE_CODE = env_str('LANGUAGE_CODE', default='en-us')  # Default lang if browser will not detect
 
+METRICS_TOKEN = env_str('PROMETHEUS_METRICS_TOKEN', default=None)  # Bearer token guarding /metrics; unset disables the endpoint
+
 USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', default=True)
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=False)
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', default=True)
