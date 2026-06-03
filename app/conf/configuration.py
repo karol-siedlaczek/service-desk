@@ -6,6 +6,13 @@ def env_bool(name: str, default=False):
     return os.getenv(name, str(default)).lower() in ("1", "true", "yes", "y", "t")
 
 
+def env_int(name: str, default):
+    value = os.getenv(name)
+    if value is None or value == '':
+        return default
+    return int(value)
+
+
 SITE_NAME = os.getenv('DJANGO_SITE_NAME', default='ServiceDeskApp')
 STATIC_ROOT = os.getenv('STATIC_ROOT', default='staticfiles')
 MEDIA_ROOT = os.getenv('MEDIA_ROOT', default='media')
@@ -29,7 +36,7 @@ LOG = {
 
 CACHE = {
     'ENABLED': env_bool('CACHE_ENABLED', default=False),
-    'TTL': int(os.getenv('CACHE_TTL', default=600))
+    'TTL': env_int('CACHE_TTL', default=600)
 }
 
 DATABASE = {  # PostgreSQL
@@ -37,15 +44,15 @@ DATABASE = {  # PostgreSQL
     'USER': os.getenv('DB_USER'),
     'PASSWORD': os.getenv('DB_PASS'),
     'HOST': os.getenv('DB_HOST', default='127.0.0.1'),
-    'PORT': os.getenv('DB_PORT', default=5432),
-    'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', default=300))
+    'PORT': env_int('DB_PORT', default=5432),
+    'CONN_MAX_AGE': env_int('DB_CONN_MAX_AGE', default=300)
 }
 
 SMTP_SERVER = {
     'USER': os.getenv('SMTP_USER'),
     'PASSWORD': os.getenv('SMTP_PASS'),
     'HOST': os.getenv('SMTP_HOST'),
-    'PORT': int(os.getenv('SMTP_PORT', default=465)),
+    'PORT': env_int('SMTP_PORT', default=465),
     'USE_SSL': env_bool('SMTP_USE_SSL', default=True),
     'FROM': os.getenv('SMTP_FROM', default=os.getenv('SMTP_USER'))
 }
@@ -54,7 +61,7 @@ REDIS = {
     'USER': os.getenv('REDIS_USER'),
     'PASSWORD': os.getenv('REDIS_PASS'),
     'HOST': os.getenv('REDIS_HOST', default='127.0.0.1'),
-    'PORT': os.getenv('REDIS_PORT', default=6379),
-    'DB': os.getenv('REDIS_DB', default=0),
+    'PORT': env_int('REDIS_PORT', default=6379),
+    'DB': env_int('REDIS_DB', default=0),
     'SSL': env_bool('REDIS_SSL', default=False)
 }
