@@ -165,7 +165,7 @@ if CACHE_ENABLED:  # Falls back to the in-memory LocMemCache when disabled
             'KEY_PREFIX': 'service-desk',
             'OPTIONS': {
                 'DB': conf.REDIS['DB'],
-                'USERNAME': conf.REDIS['USER'],
+                'PASSWORD': conf.REDIS['PASSWORD'],
                 'CONNECTION_POOL_KWARGS': {
                     'username': conf.REDIS['USER'],
                 },
