@@ -161,10 +161,9 @@ if CACHE_ENABLED:  # Falls back to the in-memory LocMemCache when disabled
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': f"{REDIS_PROTOCOL}://{conf.REDIS['HOST']}:{conf.REDIS['PORT']}",
+            'LOCATION': f"{REDIS_PROTOCOL}://{conf.REDIS['HOST']}:{conf.REDIS['PORT']}/{conf.REDIS['DB']}",
             'KEY_PREFIX': 'service-desk',
             'OPTIONS': {
-                'DB': conf.REDIS['DB'],
                 'PASSWORD': conf.REDIS['PASSWORD'],
                 'CONNECTION_POOL_KWARGS': {
                     'username': conf.REDIS['USER'],
