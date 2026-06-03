@@ -13,15 +13,22 @@ def env_int(name: str, default):
     return int(value)
 
 
-SITE_NAME = os.getenv('DJANGO_SITE_NAME', default='ServiceDeskApp')
-STATIC_ROOT = os.getenv('STATIC_ROOT', default='staticfiles')
-MEDIA_ROOT = os.getenv('MEDIA_ROOT', default='media')
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', default=get_random_secret_key())
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='*').split(',')
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', default='http://localhost').split(',')
+def env_str(name: str, default=None):
+    value = os.getenv(name)
+    if value is None or value == '':
+        return default
+    return value
+
+
+SITE_NAME = env_str('DJANGO_SITE_NAME', default='ServiceDeskApp')
+STATIC_ROOT = env_str('STATIC_ROOT', default='staticfiles')
+MEDIA_ROOT = env_str('MEDIA_ROOT', default='media')
+SECRET_KEY = env_str('DJANGO_SECRET_KEY', default=get_random_secret_key())
+ALLOWED_HOSTS = env_str('ALLOWED_HOSTS', default='*').split(',')
+CSRF_TRUSTED_ORIGINS = env_str('CSRF_TRUSTED_ORIGINS', default='http://localhost').split(',')
 DEBUG = env_bool('DJANGO_DEBUG', default=False)
-TIME_ZONE = os.getenv('TIME_ZONE', default='Europe/Zagreb')
-LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', default='en-us')  # Default lang if browser will not detect
+TIME_ZONE = env_str('TIME_ZONE', default='Europe/Zagreb')
+LANGUAGE_CODE = env_str('LANGUAGE_CODE', default='en-us')  # Default lang if browser will not detect
 
 USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', default=True)
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=False)
@@ -31,7 +38,7 @@ CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', default=True)
 LOG = {
     'MAX_SIZE': 1024 * 1024 * 15,  # 15MB
     'MAX_COUNT': 5,  # Per logger
-    'LEVEL': os.getenv('LOG_LEVEL', default='INFO')  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    'LEVEL': env_str('LOG_LEVEL', default='INFO')  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 }
 
 CACHE = {
@@ -43,7 +50,7 @@ DATABASE = {  # PostgreSQL
     'NAME': os.getenv('DB_NAME'),
     'USER': os.getenv('DB_USER'),
     'PASSWORD': os.getenv('DB_PASS'),
-    'HOST': os.getenv('DB_HOST', default='127.0.0.1'),
+    'HOST': env_str('DB_HOST', default='127.0.0.1'),
     'PORT': env_int('DB_PORT', default=5432),
     'CONN_MAX_AGE': env_int('DB_CONN_MAX_AGE', default=300)
 }
@@ -60,7 +67,7 @@ SMTP_SERVER = {
 REDIS = {
     'USER': os.getenv('REDIS_USER'),
     'PASSWORD': os.getenv('REDIS_PASS'),
-    'HOST': os.getenv('REDIS_HOST', default='127.0.0.1'),
+    'HOST': env_str('REDIS_HOST', default='127.0.0.1'),
     'PORT': env_int('REDIS_PORT', default=6379),
     'DB': env_int('REDIS_DB', default=0),
     'SSL': env_bool('REDIS_SSL', default=False)
