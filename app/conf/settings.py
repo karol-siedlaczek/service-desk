@@ -85,6 +85,10 @@ if conf.SMTP_SERVER['HOST']:
     DEFAULT_FROM_EMAIL = conf.SMTP_SERVER['FROM']
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    # Clear Django's default EMAIL_HOST ('localhost') so the health check
+    # treats SMTP as not configured instead of probing localhost:25.
+    EMAIL_HOST = ''
+    
 INSTALLED_APPS = [
     'core',
     'django.contrib.admin',
